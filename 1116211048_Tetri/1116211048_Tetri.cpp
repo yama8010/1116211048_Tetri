@@ -125,7 +125,6 @@ SHAPE shapes[SHAPE_MAX] = {
 int score = 0;
 int fps = 1;
 int interval = 1000 / fps;
-int fpsInterval = 500;
 int field[FIELD_HEIGHT][FIELD_WIDTH];
 int screen[FIELD_HEIGHT][FIELD_WIDTH];
 
@@ -148,7 +147,6 @@ bool MinoIntersectField() {
 
 	return false;
 }
-
 
 void DrawScreen() {
 	COORD consoleSize = GetConsoleSize();
@@ -208,19 +206,29 @@ void MinoFall() {
 	mino.y--;
 }
 
-void LevelUp(int* score) {
-	static int prevScore = 0; // 前回のスコアを保持する変数
 
-	if (*score >= prevScore + fpsInterval) {
+void LevelUp() {
+	static int prevScore = 0; // 前回のスコアを保持する変数
+    static int targetScore = 500; // 次にスコアを増やす目標のスコアを保持する変数
+	static int initialInterval = 1000; // ミノの初期落下間隔（ミリ秒）
+	int prevtargetScore = 0;
+
+	if (score >= targetScore) {
 		fps++; // FPSを増やす
-		prevScore += 500;
+		targetScore += 500; // 次の目標スコアを更新
+		initialInterval -= 50; // ミノの初期落下間隔を減らす（ミリ秒単位）
 	}
+
+	prevtargetScore = targetScore;
+	//prevScore = score; // 前回のスコアを更新
+	interval = initialInterval; // ミノの落下間隔を初期間隔に戻す
 }
 
 int main() {
 
 	drawLargeTETRI();
 	drawStart();
+	
 
 	while (1) {
 		if (_kbhit()) {
@@ -235,10 +243,10 @@ int main() {
 	while (1) {
 
 		clock_t nowClock = clock();
+
 		if (nowClock >= lastClock + interval) {
 			lastClock = nowClock;
-			LevelUp(&score); //scoreのポインタを渡す
-
+			LevelUp();
 			MINO lastMino = mino;
 			mino.y++;
 
@@ -319,6 +327,7 @@ int main() {
 	printf("\n\n");
 	printf("\tSCORE : %d\n", score);
 	printf("\t経過時間 : %d 秒", lastClock / 1000);
+	printf("\tLEVEL : %d\n", fps);
 
 	char currentDirectory[CHARBUFF];
 	getGurrentDirectory(currentDirectory);
@@ -351,6 +360,8 @@ int main() {
 		fprintf_s(fp, "%d\n", score);
 		fputs("経過時間\n", fp);
 		fprintf_s(fp, "%d秒\n", lastClock / 1000);
+		fputs("level\n", fp);
+		fprintf_s(fp, "%d\n", fps);
 		fclose(fp);
 	}
 };
